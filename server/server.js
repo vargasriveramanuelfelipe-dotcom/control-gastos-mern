@@ -109,6 +109,19 @@ app.put('/api/settings', async (req, res) => {
   return res.json({ initialBalance });
 });
 
+app.post('/api/account/reset', async (_req, res) => {
+  if (useMemoryFallback || mongoose.connection.readyState !== 1) {
+    memory.initialBalance = 0;
+    memory.movements = [];
+  } else {
+    await Promise.all([
+      Movement.deleteMany({}),
+      Setting.findOneAndUpdate({ key: 'main' }, { key: 'main', initialBalance: 0 }, { upsert: true })
+    ]);
+  }
+  return res.json({ initialBalance: 0, movementCount: 0 });
+});
+
 app.get('/api/movements', async (req, res) => {
   res.json(await readMovements(req.query));
 });
